@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if [ ! -e "./out/arch/arm64/boot/Image.gz-dtb" ]; then
+./sendtele.sh msg "Kernel Build Failed:("
+exit 1
+fi
+

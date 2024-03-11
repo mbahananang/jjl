@@ -1,0 +1,64 @@
+name: Build image
+
+on:
+  workflow_dispatch:
+  watch:
+    types: [started]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 5
+
+      - name: setup package
+        run: |
+          chmod +x sendtele.sh
+          ./sendtele.sh msg "|| Start sync on Eraselk CI ||"
+          sudo apt-get update -y; sudo apt-get update -y
+          sudo apt-get install -y dialog bash sed wget git curl zip tar jq expect make cmake automake autoconf llvm lld lldb clang gcc binutils bison perl gperf gawk flex bc python3 zstd openssl unzip cpio bc bison build-essential ccache liblz4-tool libsdl1.2-dev libstdc++6 libxml2 libxml2-utils lzop pngcrush schedtool squashfs-tools xsltproc zlib1g-dev libncurses5-dev bzip2 git gcc g++ libssl-dev gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi dos2unix kmod python2 aria2 glibc-source
+
+      - name: Clone toolchains
+        run: |
+          git clone --depth=1 https://gitlab.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-r437112.git clang
+          
+          wget https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu.tar.xz -O linaro64
+          tar -xf linaro64
+          mv -f gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu gcc64
+          rm -f linaro64
+          
+          wget https://releases.linaro.org/components/toolchain/binaries/latest-7/arm-linux-gnueabi/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabi.tar.xz -O linaro32
+          tar -xf linaro32
+          mv -f gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabi gcc32
+          rm -f linaro32
+        
+      - name: Cleanup
+        run: |
+          make clean
+          make mrproper
+          rm -rf ./out
+          find . -type f -exec chmod 777 {} +
+          ./sendtele.sh msg "Done"
+          
+      - name: Build Kernel
+        run: |
+          sleep 10
+          ./sendtele.sh msg "Start Build"
+          ./build
+         
+      - name: Upload to TG
+        run: |
+          ./check
+          ./sendtele.sh msg "Build Success, please wait for the image sended."
+          sleep 10
+          ./sendtele.sh file out/arch/arm64/boot/Image.gz-dtb "#Kernel #RUI1 #RMX218x"

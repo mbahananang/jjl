@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#configure
+mp="$(readlink -f -- $(pwd))"
+export KBUILD_BUILD_USER="nobody"
+export KBUILD_BUILD_HOST="android-builder"
+export PATH="${mp}/clang/bin:${mp}/gcc64/bin:${mp}/gcc32/bin:$PATH"
+export LD_LIBRARY_PATH="${mp}/clang/lib64"
+
+sleep 2s
+# BUILD
+make CC="clang" ARCH=arm64 O=out RMX2185_defconfig
+make CC="clang" ARCH=arm64 O=out -j$(nproc --all) \
+HEADER_ARCH=arm64 \
+SUBARCH=arm64 \
+LLVM=1 \
+LLVM_IAS=1 \
+AR=llvm-ar \
+NM=llvm-nm \
+OBJCOPY=llvm-objcopy \
+OBJDUMP=llvm-objdump \
+CROSS_COMPILE=aarch64-linux-gnu- \
+CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+CLANG_TRIPLE=aarch64-linux-gnu- \
+#END
